@@ -910,7 +910,7 @@ void HEkkDual::majorUpdateFactor() {
   /**
    * 9. Update the factor by CFT
    */
-  HighsInt* iRows = new HighsInt[multi_nFinish];
+  std::unique_ptr<HighsInt[]> iRows (new HighsInt[multi_nFinish]);
   for (HighsInt iCh = 0; iCh < multi_nFinish - 1; iCh++) {
     multi_finish[iCh].row_ep->next = multi_finish[iCh + 1].row_ep;
     multi_finish[iCh].col_aq->next = multi_finish[iCh + 1].col_aq;
@@ -919,7 +919,7 @@ void HEkkDual::majorUpdateFactor() {
   iRows[multi_nFinish - 1] = multi_finish[multi_nFinish - 1].row_out;
   if (multi_nFinish > 0)
     ekk_instance_.updateFactor(multi_finish[0].col_aq, multi_finish[0].row_ep,
-                               iRows, &rebuild_reason);
+                               iRows.get(), &rebuild_reason);
 
   // Determine whether to reinvert based on the synthetic clock
   const double use_build_synthetic_tick =
@@ -931,8 +931,6 @@ void HEkkDual::majorUpdateFactor() {
       kMultiSyntheticTickReinversionMinUpdateCount;
   if (reinvert_syntheticClock && performed_min_updates)
     rebuild_reason = kRebuildReasonSyntheticClockSaysInvert;
-
-  delete[] iRows;
 }
 
 void HEkkDual::majorRollback() {

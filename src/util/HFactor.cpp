@@ -2060,8 +2060,9 @@ void HFactor::updateCFT(HVector* aq, HVector* ep, HighsInt* iRow
   HighsInt num_update = 0;
   for (HVector* vec = aq; vec != 0; vec = vec->next) num_update++;
 
-  HVector** aq_work = new HVector*[num_update];
-  HVector** ep_work = new HVector*[num_update];
+  std::unique_ptr<HVector*[]> aq_work (new HVector*[num_update]);
+  std::unique_ptr<HVector*[]> ep_work (new HVector*[num_update]);
+
 
   for (HighsInt i = 0; i < num_update; i++) {
     aq_work[i] = aq;
@@ -2072,9 +2073,9 @@ void HFactor::updateCFT(HVector* aq, HVector* ep, HighsInt* iRow
 
   // Pivot related buffers
   HighsInt pf_np0 = pf_pivot_index.size();
-  HighsInt* p_logic = new HighsInt[num_update];
-  double* p_value = new double[num_update];
-  double* p_alpha = new double[num_update];
+  std::unique_ptr<HighsInt[]> p_logic (new HighsInt[num_update]);
+  std::unique_ptr<double[]> p_value (new double[num_update]);
+  std::unique_ptr<double[]> p_alpha (new double[num_update]);  
   for (HighsInt cp = 0; cp < num_update; cp++) {
     HighsInt c_row = iRow[cp];
     HighsInt i_logic = u_pivot_lookup[c_row];
@@ -2084,8 +2085,8 @@ void HFactor::updateCFT(HVector* aq, HVector* ep, HighsInt* iRow
   }
 
   // Temporary U pointers
-  HighsInt* t_start = new HighsInt[num_update + 1];
-  double* t_pivot = new double[num_update];
+  std::unique_ptr<HighsInt[]> t_start (new HighsInt[num_update + 1]);
+  std::unique_ptr<double[]> t_pivot (new double[num_update]);
   t_start[0] = u_index.size();
 
   // Logically sorted previous row_ep
@@ -2288,13 +2289,6 @@ void HFactor::updateCFT(HVector* aq, HVector* ep, HighsInt* iRow
   //    // See if we want refactor
   //    if (u_total_x > u_merit_x && pf_pivot_index.size() > 100)
   //        *hint = 1;
-  delete[] aq_work;
-  delete[] ep_work;
-  delete[] p_logic;
-  delete[] p_value;
-  delete[] p_alpha;
-  delete[] t_start;
-  delete[] t_pivot;
 }
 
 void HFactor::updateFT(HVector* aq, HVector* ep, HighsInt iRow
