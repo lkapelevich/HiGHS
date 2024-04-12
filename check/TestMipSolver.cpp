@@ -574,6 +574,43 @@ TEST_CASE("MIP-get-saved-solutions", "[highs_test_mip_solver]") {
   std::remove(solution_file.c_str());
 }
 
+TEST_CASE("MIP-get-saved-solutions-presolve", "[highs_test_mip_solver]") {
+  const std::string solution_file = "MipImproving.sol";
+  Highs highs;
+  highs.setOptionValue("output_flag", dev_run);
+  highs.setOptionValue("mip_improving_solution_save", true);
+  highs.setOptionValue("mip_improving_solution_report_sparse", true);
+  highs.setOptionValue("mip_improving_solution_file", solution_file);
+  HighsLp lp;
+  lp.num_col_ = 2;
+  lp.num_row_ = 0;
+  lp.col_cost_ = {1, 1};
+  lp.col_lower_ = {0, 0};
+  lp.col_upper_ = {1, 1};
+  lp.integrality_ = {HighsVarType::kInteger, HighsVarType::kInteger};
+  lp.row_lower_ = {};
+  lp.row_upper_ = {};
+  lp.a_matrix_.format_ = MatrixFormat::kColwise;
+  lp.a_matrix_.num_col_ = 2;
+  lp.a_matrix_.num_row_ = 0;
+  lp.a_matrix_.start_ = {0};
+  lp.a_matrix_.index_ = {};
+  lp.a_matrix_.value_ = {};
+  highs.passModel(lp);
+  highs.run();
+  const std::vector<HighsObjectiveSolution> saved_objective_and_solution =
+      highs.getSavedMipSolutions();
+  const HighsInt num_saved_solution = saved_objective_and_solution.size();
+  REQUIRE(num_saved_solution == 1);
+  const HighsInt last_saved_solution = num_saved_solution - 1;
+  REQUIRE(saved_objective_and_solution[last_saved_solution].objective ==
+          highs.getInfo().objective_function_value);
+  for (HighsInt iCol = 0; iCol < highs.getLp().num_col_; iCol++)
+    REQUIRE(saved_objective_and_solution[last_saved_solution].col_value[iCol] ==
+            highs.getSolution().col_value[iCol]);
+  std::remove(solution_file.c_str());
+}
+
 TEST_CASE("MIP-objective-target", "[highs_test_mip_solver]") {
   const double egout_optimal_objective = 568.1007;
   const double egout_objective_target = 610;
